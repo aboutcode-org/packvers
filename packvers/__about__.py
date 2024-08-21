@@ -15,7 +15,7 @@ __all__ = [
 
 __title__ = "packvers"
 __summary__ = "Core utilities for Python packages. Fork to support LegacyVersion"
-__uri__ = "https://github.com/nexB/packvers"
+__uri__ = "https://github.com/aboutcode-org/packvers"
 
 __version__ = "21.5"
 

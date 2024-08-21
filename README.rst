@@ -44,7 +44,7 @@ Discussion
 If you run into bugs, you can file them in our `issue tracker`_.
 
 
-.. _`issue tracker`: https://github.com/nexB/packvers/issues
+.. _`issue tracker`: https://github.com/aboutcode-org/packvers/issues
 
 
 Code of Conduct
