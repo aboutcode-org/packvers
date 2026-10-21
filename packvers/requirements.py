@@ -15,9 +15,15 @@ from pyparsing import (  # noqa
     Regex,
     Word,
     ZeroOrMore,
-    originalTextFor,
     stringEnd,
     stringStart,
+)
+
+from packvers._pyparsing_compat import (
+    as_list,
+    original_text_for,
+    parse_string,
+    set_parse_action,
 )
 
 from .markers import MARKER_EXPR, Marker
@@ -61,15 +67,15 @@ VERSION_MANY = Combine(
     VERSION_ONE + ZeroOrMore(COMMA + VERSION_ONE), joinString=",", adjacent=False
 )("_raw_spec")
 _VERSION_SPEC = Optional((LPAREN + VERSION_MANY + RPAREN) | VERSION_MANY)
-_VERSION_SPEC.setParseAction(lambda s, l, t: t._raw_spec or "")
+set_parse_action(_VERSION_SPEC, lambda s, l, t: t._raw_spec or "")
 
-VERSION_SPEC = originalTextFor(_VERSION_SPEC)("specifier")
-VERSION_SPEC.setParseAction(lambda s, l, t: t[1])
+VERSION_SPEC = original_text_for(_VERSION_SPEC)("specifier")
+set_parse_action(VERSION_SPEC, lambda s, l, t: t[1])
 
-MARKER_EXPR = originalTextFor(MARKER_EXPR())("marker")
-MARKER_EXPR.setParseAction(
-    lambda s, l, t: Marker(s[t._original_start : t._original_end])
+MARKER_EXPR = original_text_for(MARKER_EXPR())("marker")
+set_parse_action(MARKER_EXPR, lambda s, l, t: Marker(s[t._original_start : t._original_end])
 )
+
 MARKER_SEPARATOR = SEMICOLON
 MARKER = MARKER_SEPARATOR + MARKER_EXPR
 
@@ -81,7 +87,7 @@ NAMED_REQUIREMENT = NAME + Optional(EXTRAS) + (URL_AND_MARKER | VERSION_AND_MARK
 REQUIREMENT = stringStart + NAMED_REQUIREMENT + stringEnd
 # pyparsing isn't thread safe during initialization, so we do it eagerly, see
 # issue #104
-REQUIREMENT.parseString("x[]")
+parse_string(REQUIREMENT, "x[]")
 
 
 class Requirement:
@@ -99,7 +105,7 @@ class Requirement:
 
     def __init__(self, requirement_string: str) -> None:
         try:
-            req = REQUIREMENT.parseString(requirement_string)
+            req = parse_string(REQUIREMENT, requirement_string)
         except ParseException as e:
             raise InvalidRequirement(
                 f'Parse error at "{ requirement_string[e.loc : e.loc + 8]!r}": {e.msg}'
@@ -118,7 +124,7 @@ class Requirement:
             self.url: TOptional[str] = req.url
         else:
             self.url = None
-        self.extras: Set[str] = set(req.extras.asList() if req.extras else [])
+        self.extras: Set[str] = set(as_list(req.extras) if req.extras else [])
         self.specifier: SpecifierSet = SpecifierSet(req.specifier)
         self.marker: TOptional[Marker] = req.marker if req.marker else None
 

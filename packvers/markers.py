@@ -7,6 +7,7 @@ import os
 import platform
 import sys
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from packvers._pyparsing_compat import parse_string, set_parse_action
 
 from pyparsing import (  # noqa: N817
     Forward,
@@ -109,24 +110,24 @@ ALIASES = {
     "platform.python_implementation": "platform_python_implementation",
     "python_implementation": "platform_python_implementation",
 }
-VARIABLE.setParseAction(lambda s, l, t: Variable(ALIASES.get(t[0], t[0])))
+set_parse_action(VARIABLE, lambda s, l, t: Variable(ALIASES.get(t[0], t[0])))
 
 VERSION_CMP = (
     L("===") | L("==") | L(">=") | L("<=") | L("!=") | L("~=") | L(">") | L("<")
 )
 
 MARKER_OP = VERSION_CMP | L("not in") | L("in")
-MARKER_OP.setParseAction(lambda s, l, t: Op(t[0]))
+set_parse_action(MARKER_OP, lambda s, l, t: Op(t[0]))
 
 MARKER_VALUE = QuotedString("'") | QuotedString('"')
-MARKER_VALUE.setParseAction(lambda s, l, t: Value(t[0]))
+set_parse_action(MARKER_VALUE, lambda s, l, t: Value(t[0]))
 
 BOOLOP = L("and") | L("or")
 
 MARKER_VAR = VARIABLE | MARKER_VALUE
 
 MARKER_ITEM = Group(MARKER_VAR + MARKER_OP + MARKER_VAR)
-MARKER_ITEM.setParseAction(lambda s, l, t: tuple(t[0]))
+set_parse_action(MARKER_ITEM, lambda s, l, t: tuple(t[0]))
 
 LPAREN = L("(").suppress()
 RPAREN = L(")").suppress()
@@ -275,7 +276,7 @@ def default_environment() -> Dict[str, str]:
 class Marker:
     def __init__(self, marker: str) -> None:
         try:
-            self._markers = _coerce_parse_result(MARKER.parseString(marker))
+            self._markers = _coerce_parse_result( parse_string(MARKER, marker))
         except ParseException as e:
             raise InvalidMarker(
                 f"Invalid marker: {marker!r}, parse error at "
